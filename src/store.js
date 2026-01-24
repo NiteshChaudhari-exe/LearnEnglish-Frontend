@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { getErrorMessage, handleApiError } from './utils/errorHandler';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -8,7 +9,7 @@ export const useStore = create((set, get) => ({
   user: null,
   loading: false,
   error: null,
-  showNepali: localStorage.getItem('showNepali') === 'true' || true, // Default to Nepali (primary)
+  showNepali: localStorage.getItem('showNepali') === 'true' || true,
   toastNotifications: true,
 
   // Toggle language preference
@@ -26,8 +27,10 @@ export const useStore = create((set, get) => ({
 
   // Get current language code
   getCurrentLanguage: () => get().showNepali ? 'ne' : 'en',
+
+  // Create user
   createUser: async (username, email, password, native_language = 'en') => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const response = await axios.post(`${API_URL}/users`, {
         username,
@@ -39,7 +42,9 @@ export const useStore = create((set, get) => ({
       localStorage.setItem('userId', response.data.id);
       return response.data;
     } catch (error) {
-      set({ error: error.response?.data?.error || 'Failed to create user', loading: false });
+      const errorMessage = getErrorMessage(error);
+      set({ error: errorMessage, loading: false });
+      handleApiError(error, 'CREATE_USER');
       throw error;
     }
   },
@@ -61,13 +66,15 @@ export const useStore = create((set, get) => ({
   // Fetch lessons
   lessons: [],
   fetchLessons: async (level = 'A1') => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const response = await axios.get(`${API_URL}/lessons`, { params: { level } });
       set({ lessons: response.data, loading: false });
       return response.data;
     } catch (error) {
-      set({ error: error.response?.data?.error || 'Failed to fetch lessons', loading: false });
+      const errorMessage = getErrorMessage(error);
+      set({ error: errorMessage, loading: false });
+      handleApiError(error, 'FETCH_LESSONS');
       throw error;
     }
   },
@@ -75,13 +82,15 @@ export const useStore = create((set, get) => ({
   // Fetch single lesson
   currentLesson: null,
   fetchLesson: async (lessonId) => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const response = await axios.get(`${API_URL}/lessons/${lessonId}`);
       set({ currentLesson: response.data, loading: false });
       return response.data;
     } catch (error) {
-      set({ error: error.response?.data?.error || 'Failed to fetch lesson', loading: false });
+      const errorMessage = getErrorMessage(error);
+      set({ error: errorMessage, loading: false });
+      handleApiError(error, 'FETCH_LESSON');
       throw error;
     }
   },
@@ -102,7 +111,11 @@ export const useStore = create((set, get) => ({
   // Mark lesson complete
   completeLesson: async (lessonId, score = 0) => {
     const userId = get().user?.id;
-    if (!userId) throw new Error('User not authenticated');
+    if (!userId) {
+      const error = new Error('User not authenticated');
+      set({ error: error.message });
+      throw error;
+    }
 
     try {
       const response = await axios.post(`${API_URL}/progress/lesson/${lessonId}/complete`, {
@@ -111,7 +124,9 @@ export const useStore = create((set, get) => ({
       });
       return response.data;
     } catch (error) {
-      set({ error: 'Failed to complete lesson' });
+      const errorMessage = getErrorMessage(error);
+      set({ error: errorMessage });
+      handleApiError(error, 'COMPLETE_LESSON');
       throw error;
     }
   },
@@ -124,7 +139,9 @@ export const useStore = create((set, get) => ({
       });
       return response.data;
     } catch (error) {
-      set({ error: 'Failed to submit answer' });
+      const errorMessage = getErrorMessage(error);
+      set({ error: errorMessage });
+      handleApiError(error, 'SUBMIT_ANSWER');
       throw error;
     }
   },

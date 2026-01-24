@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { useStore } from './store';
+import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
 
 // Pages
@@ -19,22 +20,24 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <Toaster 
-        position="top-center"
-        theme="light"
-        richColors
-        closeButton
-      />
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={user?.id ? <HomePage /> : <LoginPage />} />
-        <Route path="/lessons" element={user?.id ? <LessonsPage /> : <LoginPage />} />
-        <Route path="/vocabulary" element={user?.id ? <VocabularyPage /> : <LoginPage />} />
-        <Route path="/progress" element={user?.id ? <ProgressPage /> : <LoginPage />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Toaster 
+          position="top-center"
+          theme="light"
+          richColors
+          closeButton
+        />
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={user?.id ? <HomePage /> : <LoginPage />} />
+          <Route path="/lessons" element={user?.id ? <LessonsPage /> : <LoginPage />} />
+          <Route path="/vocabulary" element={user?.id ? <VocabularyPage /> : <LoginPage />} />
+          <Route path="/progress" element={user?.id ? <ProgressPage /> : <LoginPage />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
