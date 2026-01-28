@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
 import { getErrorMessage, handleApiError } from './utils/errorHandler';
-import { STORAGE_KEYS, API_CONFIG } from './config';
+import { STORAGE_KEYS } from './config/constants';
+import { API_CONFIG } from './config/api.config';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -217,106 +218,3 @@ export const useStore = create(
     }
   )
 );
-
-    try {
-      const response = await axios.get(`${API_URL}/lessons/daily/${userId}`);
-      set({ dailyLesson: response.data });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to fetch daily lesson:', error);
-      throw error;
-    }
-  },
-
-  // Mark lesson complete
-  completeLesson: async (lessonId, score = 0) => {
-    const userId = get().user?.id;
-    if (!userId) {
-      const error = new Error('User not authenticated');
-      set({ error: error.message });
-      throw error;
-    }
-
-    try {
-      const response = await axios.post(`${API_URL}/progress/lesson/${lessonId}/complete`, {
-        userId,
-        score
-      });
-      return response.data;
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      set({ error: errorMessage });
-      handleApiError(error, 'COMPLETE_LESSON');
-      throw error;
-    }
-  },
-
-  // Submit quiz answer
-  submitAnswer: async (quizId, userAnswer) => {
-    try {
-      const response = await axios.post(`${API_URL}/quizzes/${quizId}/answer`, {
-        userAnswer
-      });
-      return response.data;
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      set({ error: errorMessage });
-      handleApiError(error, 'SUBMIT_ANSWER');
-      throw error;
-    }
-  },
-
-  // Get user profile
-  profile: null,
-  fetchProfile: async (userId) => {
-    try {
-      const response = await axios.get(`${API_URL}/users/${userId}/profile`);
-      set({ profile: response.data });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to fetch profile:', error);
-      throw error;
-    }
-  },
-
-  // Get user progress
-  progress: null,
-  fetchProgress: async (userId) => {
-    try {
-      const response = await axios.get(`${API_URL}/progress/${userId}`);
-      set({ progress: response.data });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to fetch progress:', error);
-      throw error;
-    }
-  },
-
-  // Fetch vocabulary
-  vocabulary: [],
-  fetchVocabulary: async (lessonId = null) => {
-    try {
-      const params = lessonId ? { lessonId } : {};
-      const response = await axios.get(`${API_URL}/vocabulary`, { params });
-      set({ vocabulary: response.data });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to fetch vocabulary:', error);
-      throw error;
-    }
-  },
-
-  // Search vocabulary
-  searchVocabulary: async (term) => {
-    try {
-      const response = await axios.get(`${API_URL}/vocabulary/search/${term}`);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to search vocabulary:', error);
-      throw error;
-    }
-  },
-
-  // Clear error
-  clearError: () => set({ error: null })
-}));
